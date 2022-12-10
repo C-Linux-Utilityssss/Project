@@ -31,10 +31,8 @@ int main(){
         field = ">";
     #endif
 
-    /* fs::path currentDirectory = fs::current_path().root_path();
-    fs::current_path(currentDirectory); */
-    fs::path currentDirectory = "/home/leemyeongjae/Desktop";
-    fs::current_path("//home//leemyeongjae//Desktop");
+    fs::path currentDirectory = fs::current_path().root_path();
+    fs::current_path(currentDirectory);
     string stringCommand;
     vector<string> command;
 

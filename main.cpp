@@ -19,8 +19,8 @@ vector<string> split(string sentence, char Separator)
     return answer;
 }
 
-void setShortcut(vector<string> command);
-void runCommand(vector<string> command);
+void setShortcut(vector<string> command, fs::path& currentDirectory);
+void runCommand(vector<string> command, fs::path& currentDirectory);
 
 int main(){
     string field = "#";
@@ -39,20 +39,17 @@ int main(){
         cout << currentDirectory.string() << field; 
         getline(cin, stringCommand);
         command = split(stringCommand, ' ');
-        if(command[0] == "shortcut") {
-            /* 이명재가 구현할 함수 */
-            setShortcut(command);
-        } else {
-            /* 이상진이 구현할 함수 */
-            runCommand(command);
-        }
+        if(command[0] == "shortcut") setShortcut(command, currentDirectory);
+        else runCommand(command, currentDirectory);
     }
     return 0;
 }
 
-void setShortcut(vector<string> command){
+void setShortcut(vector<string> command, fs::path& currentDirectory){
 
+    currentDirectory = fs::current_path();
 }
-void runCommand(vector<string> command){
+void runCommand(vector<string> command, fs::path& currentDirectory){
 
+    currentDirectory = fs::current_path();
 }

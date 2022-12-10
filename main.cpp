@@ -30,10 +30,13 @@ int main(){
         field = ">";
     #endif
 
+    fs::path currentDirectory = fs::current_path().root_path();
+    fs::current_path(currentDirectory);
     string stringCommand;
     vector<string> command;
+
     while(true) {
-        cout << fs::current_path().root_path() << field; 
+        cout << currentDirectory.string() << field; 
         getline(cin, stringCommand);
         command = split(stringCommand, ' ');
         if(command[0] == "shortcut") {
@@ -43,24 +46,6 @@ int main(){
             /* 이상진이 구현할 함수 */
             runCommand(command);
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
     return 0;
 }

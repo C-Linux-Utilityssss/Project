@@ -23,12 +23,15 @@ vector<string> split(string sentence, char Separator)
 void setShortcut(vector<string> command, fs::path& currentDirectory);
 void runCommand(vector<string> command, fs::path& currentDirectory);
 
+string os = "linux";
 int main(){
     string field = "#";
     #if __linux__
         field = "$ ";
+        os = "linux";
     #elif _WIN32
         field = ">";
+        os = "windows";
     #endif
 
     fs::path currentDirectory = fs::current_path().root_path();
@@ -39,12 +42,17 @@ int main(){
     while(true) {
         cout << currentDirectory.string() << field; 
         getline(cin, stringCommand);
+        if(!stringCommand.length()) {
+            continue;
+        }
         command = split(stringCommand, ' ');
         if(command[0] == "shortcut") setShortcut(command, currentDirectory);
         else runCommand(command, currentDirectory);
     }
     return 0;
 }
+
+
 
 /* Utilities */
 bool isNotMatch(int size, int num) { 
@@ -60,7 +68,11 @@ std::string getRightPaddingString(std::string const &str, int n, char paddedChar
     return ss.str();
 }
 
+
+
 /*--------------------------------------------------------------*/
+
+
 
 void setShortcut(vector<string> command, fs::path& currentDirectory){
     if(isNotMatch(command.size(), 2) || isNotMatch(command.size(), 3)) return;
@@ -94,11 +106,22 @@ void setShortcut(vector<string> command, fs::path& currentDirectory){
     // 인자의 개수가 맞지 않으면 에러메세지를 내보냄
     }
 }
+const int MAX = 100;
+typedef struct Stack { // cd를 통해 경로를 이동했을 때 그 경로가 스택에 쌓임
+    int top;
+    string stack[MAX];
+} Stack;
+
+
+
 /*--------------------------------------------------------------*/
 
+
+
 void runCommand(vector<string> command, fs::path& currentDirectory){
-    error_code err;
-    if(command[0] == "ls") {
+    error_code err; // 에러 확인용
+
+    if(command[0] == "ls") { // ls
         int cnt = 0;
         int brCnt = 3;
         int max = 0;
@@ -120,21 +143,58 @@ void runCommand(vector<string> command, fs::path& currentDirectory){
         }
         if(cnt) cout << endl;
     }
-    else if(command[0] == "mkdir") {
+
+    else if(command[0] == "mkdir") { // mkdir
         if(isNotMatch(command.size(), 2)) return;
         if(!fs::create_directories(command[1], err)) {
             cout << "Failed to create directory, error: " 
                 << err.message().c_str() << endl;
         }
     }
-    else if(command[0] == "cd") {
-        if(isNotMatch(command.size(), 2)) return;
-        if(!fs::is_directory(command[1], err)) {
+
+    else if(command[0] == "touch") {
+
+    }
+
+    else if(command[0] == "cd") { // cd
+        static Stack stack{-1}; // 정적으로 static 구조체 생성
+
+        if(isNotMatch(command.size(), 2)) return; // 인자가 2개가 아닐 경우
+
+        if(command[1][0] == '-') { // 옵션을 인자로 준 경우
+
+            if(command[1] == "-pop") { // 옵션이 -pop이라면
+
+                if(stack.top == -1) { // 스택이 빈 경우
+                    cout << "CD stack is empty\n";
+                    return;
+                }
+                fs::current_path(stack.stack[stack.top--]);
+            }
+            else if(command[1] == "-history") // 옵션이 -history라면
+                for(int i = 0; i <= stack.top; i++) cout << i << " : " << stack.stack[i] << endl;
+        }
+        else if(!fs::is_directory(command[1], err)) { // 폴더가 존재하지 않는다면
             cout << "No such file or directory, error: " << err.message().c_str() << endl;
             return;
         }
-        fs::current_path(command[1]);
-        currentDirectory = fs::current_path();
+        else { // 폴더가 존재한다면
+            if(stack.top == MAX - 1) cout << "CD stack is full\n"; // 스택이 찬 경우
+            else stack.stack[++stack.top] = fs::current_path(); // cd로 이동한 경로들을 stack 추가
+            fs::current_path(command[1]);
+        }
+    }
+
+    else if(command[0] == "find") { // find 명령어
+        if(isNotMatch(command.size(), 4)) return;
+
+    }
+
+    else if(command[0] == (os == "linux" ? "clear" : os == "window" ? "cls" : "clear")) { // clear 명령어
+        if(isNotMatch(command.size(), 1)) return;
+        if(os == "linux") system("clear");
+        else if(os == "windows") system("cls");
+        else system("clear");
     }
     currentDirectory = fs::current_path();
 }

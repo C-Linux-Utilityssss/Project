@@ -70,7 +70,7 @@ std::string getRightPaddingString(std::string const &str, int n, char paddedChar
 
 
 
-/*--------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------*/
 
 
 
@@ -114,7 +114,7 @@ typedef struct Stack { // cd를 통해 경로를 이동했을 때 그 경로가 
 
 
 
-/*--------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------*/
 
 
 
@@ -122,6 +122,7 @@ void runCommand(vector<string> command, fs::path& currentDirectory){
     error_code err; // 에러 확인용
 
     if(command[0] == "ls") { // ls
+        if(isNotMatch(command.size(), 1)) return;
         int cnt = 0;
         int brCnt = 3;
         int max = 0;
@@ -153,13 +154,20 @@ void runCommand(vector<string> command, fs::path& currentDirectory){
     }
 
     else if(command[0] == "touch") {
-
+        if(isNotMatch(command.size(), 2)) return;
+        if(fs::exists(command[1])) { // .shct 파일이 존재할 때
+            cout << command[1] + "File is already existent\n";
+            return;
+        }
+        ofstream shctFile(command[1]); // 파일 생성 및 쓰기
+        shctFile.flush();
+        shctFile.close();
     }
 
     else if(command[0] == "cd") { // cd
-        static Stack stack{-1}; // 정적으로 static 구조체 생성
-
         if(isNotMatch(command.size(), 2)) return; // 인자가 2개가 아닐 경우
+
+        static Stack stack{-1}; // 정적으로 static 구조체 생성
 
         if(command[1][0] == '-') { // 옵션을 인자로 준 경우
 

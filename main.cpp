@@ -94,6 +94,11 @@ void setShortcut(vector<string> command, fs::path& currentDirectory){
     // 인자의 개수가 맞지 않으면 에러메세지를 내보냄
     }
 }
+const int MAX = 100;
+typedef struct Stack {
+    int top;
+    string stack[MAX];
+} Stack;
 /*--------------------------------------------------------------*/
 
 void runCommand(vector<string> command, fs::path& currentDirectory){
@@ -128,13 +133,28 @@ void runCommand(vector<string> command, fs::path& currentDirectory){
         }
     }
     else if(command[0] == "cd") {
+        static Stack stack{-1};
         if(isNotMatch(command.size(), 2)) return;
-        if(!fs::is_directory(command[1], err)) {
+        if(command[1][0] == '-') { // 옵션
+            if(command[1] == "-pop") {
+                if(stack.top == -1) {
+                    cout << "CD stack is empty\n";
+                    return;
+                }
+                fs::current_path(stack.stack[stack.top--]);
+            }
+            else if(command[1] == "-history")
+                for(int i = 0; i <= stack.top; i++) cout << i << " : " << stack.stack[i] << endl;
+        }
+        else if(!fs::is_directory(command[1], err)) { // 폴더가 존재하지 않는다면
             cout << "No such file or directory, error: " << err.message().c_str() << endl;
             return;
         }
-        fs::current_path(command[1]);
-        currentDirectory = fs::current_path();
+        else { // 폴더가 존재한다면
+            if(stack.top == MAX - 1) cout << "CD stack is full\n";
+            else stack.stack[++stack.top] = fs::current_path(); // cd로 이동한 경로들을 stack에 저장함
+            fs::current_path(command[1]);
+        }
     }
     currentDirectory = fs::current_path();
 }

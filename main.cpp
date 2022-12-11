@@ -46,15 +46,32 @@ int main(){
     return 0;
 }
 
+/* Utilities */
+bool isNotMatch(int size, int num) { 
+    if(size != num)
+        cout << "The number of arguments does not match\n";
+    return size != num;
+}
+
+std::string getRightPaddingString(std::string const &str, int n, char paddedChar = ' ')
+{
+    std::ostringstream ss;
+    ss << std::left << std::setfill(paddedChar) << std::setw(n) << str;
+    return ss.str();
+}
+
+/*--------------------------------------------------------------*/
+
 void setShortcut(vector<string> command, fs::path& currentDirectory){
+    if(isNotMatch(command.size(), 2) || isNotMatch(command.size(), 3)) return;
     /* 인자가 3개인 경우 .shct 파일을 만듦
     인자는 순서대로 (shortcut <.shct 파일 이름> <경로>) */
     if(command.size() == 3) {
-        if(!fs::exists(command[2])) { // 파일이 존재하지 않을 때
+        if(!fs::exists(command[2])) { // 폴더가 존재하지 않을 때
             cout << "No such file or directory\n";
             return;
         }
-        if(fs::exists(command[1] + ".shct")) {
+        if(fs::exists(command[1] + ".shct")) { // .shct 파일이 존재할 때
             cout << command[1] + ".shct file is already existent\n";
             return;
         }
@@ -75,11 +92,49 @@ void setShortcut(vector<string> command, fs::path& currentDirectory){
         fs::current_path(pathToChange);
         currentDirectory = fs::current_path();
     // 인자의 개수가 맞지 않으면 에러메세지를 내보냄
-    } else {
-        cout << "The number of arguments does not match\n";
     }
 }
-void runCommand(vector<string> command, fs::path& currentDirectory){
+/*--------------------------------------------------------------*/
 
+void runCommand(vector<string> command, fs::path& currentDirectory){
+    error_code err;
+    if(command[0] == "ls") {
+        int cnt = 0;
+        int brCnt = 3;
+        int max = 0;
+        for (const auto& entry : fs::directory_iterator(currentDirectory)) {
+            if(max < entry.path().string().length()) max = entry.path().string().length();
+        }
+        brCnt -= max / 60;
+        for (const auto& entry : fs::directory_iterator(currentDirectory)) {
+            if(fs::is_directory(entry.path())) {
+                cout << getRightPaddingString(entry.path().string().substr(entry.path().string().find_last_of("/")), max, ' ') + '\t';
+            } else {
+                cout << getRightPaddingString(entry.path().string().substr(entry.path().string().find_last_of("/") + 1), max, ' ') + '\t';
+            }
+            cnt++;
+            if(cnt % brCnt == 0) {
+                cout << endl;
+                cnt = 0;
+            }
+        }
+        if(cnt) cout << endl;
+    }
+    else if(command[0] == "mkdir") {
+        if(isNotMatch(command.size(), 2)) return;
+        if(!fs::create_directories(command[1], err)) {
+            cout << "Failed to create directory, error: " 
+                << err.message().c_str() << endl;
+        }
+    }
+    else if(command[0] == "cd") {
+        if(isNotMatch(command.size(), 2)) return;
+        if(!fs::is_directory(command[1], err)) {
+            cout << "No such file or directory, error: " << err.message().c_str() << endl;
+            return;
+        }
+        fs::current_path(command[1]);
+        currentDirectory = fs::current_path();
+    }
     currentDirectory = fs::current_path();
 }

@@ -115,7 +115,10 @@ void qSort(int L, int R, vector<fs::path>& list) {
 
 
 void setShortcut(vector<string> command, fs::path& currentDirectory){
-    if(isNotMatch(command.size(), 2) || isNotMatch(command.size(), 3)) return;
+    if(command.size() != 2 && command.size() != 3) {
+        isNotMatch(0, 1);
+        return;
+    }
     /* 인자가 3개인 경우 .shct 파일을 만듦
     인자는 순서대로 (shortcut <.shct 파일 이름> <경로>) */
     if(command.size() == 3) {
@@ -259,6 +262,10 @@ void runCommand(vector<string> command, fs::path& currentDirectory){
         if(os == "linux") system("clear");
         else if(os == "windows") system("cls");
         else system("clear");
+    }
+
+    else {
+        cout << "Command not found\n";
     }
     currentDirectory = fs::current_path();
 }

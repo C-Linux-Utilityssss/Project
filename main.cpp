@@ -68,6 +68,46 @@ std::string getRightPaddingString(std::string const &str, int n, char paddedChar
     return ss.str();
 }
 
+void findFileAsName(string path, string name) {
+    for (const auto& entry : fs::directory_iterator(path)) {
+        if(fs::is_directory(entry.path())) // 재귀적으로 특정 문자열을 가진 파일을 탐색함
+            findFileAsName(entry.path(), name);
+        else if(entry.path().string().find(name) != string::npos) {
+            cout << entry.path().string() << endl;
+        }
+    }
+}
+
+int q(int L, int R, vector<fs::path>& list) {
+    int low = L, high = R+1;
+    string pivot = list[L].string();
+    do {
+        do {
+            low++;
+        } while(low < R + 1 && pivot.compare(list[low].string()) > 0);
+        do {
+            high--;
+        } while(pivot.compare(list[high].string()) < 0);
+        if(low < high) {
+            string temp = list[low];
+            list[low] = list[high];
+            list[high] = temp;
+        }
+    } while(low < high);
+    string temp = list[L];
+    list[L] = list[high];
+    list[high] = temp;
+    return high;
+}
+
+void qSort(int L, int R, vector<fs::path>& list) {
+    if(L < R) {
+        int m = q(L, R, list);
+        qSort(L, m-1, list);
+        qSort(m+1, R, list);
+    }
+}
+
 
 
 /*---------------------------------------------------------------------------------------------------*/
@@ -124,20 +164,26 @@ void runCommand(vector<string> command, fs::path& currentDirectory){
     if(command[0] == "ls") { // ls
         if(isNotMatch(command.size(), 1)) return;
         int cnt = 0;
-        int brCnt = 3;
+        int brCnt = 3; // 파일이나 디렉토리가 3번 출력될 때마다 줄바꿈을 함
         int max = 0;
+        int numberOfList = 0;
+        vector<fs::path> list;
         for (const auto& entry : fs::directory_iterator(currentDirectory)) {
+            list.push_back(entry.path().string());
+            numberOfList++;
             if(max < entry.path().string().length()) max = entry.path().string().length();
         }
-        brCnt -= max / 60;
-        for (const auto& entry : fs::directory_iterator(currentDirectory)) {
-            if(fs::is_directory(entry.path())) {
-                cout << getRightPaddingString(entry.path().string().substr(entry.path().string().find_last_of("/")), max, ' ') + '\t';
+        qSort(0, numberOfList-1, list);
+        brCnt -= max / 60; // 파일이나 디렉토리의 최대 글자 수가 60자씩 넘을 때마다 줄바꿈을 하는 횟수를 증가시킴
+        brCnt = brCnt <= 0 ? 1 : brCnt; // 만약 brCnt의 값이 0보다 작거나 같을 경우 1로 맞춰줌
+        for (const auto& entry : list) {
+            if(fs::is_directory(entry)) {
+                cout << getRightPaddingString(entry.string().substr(entry.string().find_last_of("/")), max, ' ') + '\t';
             } else {
-                cout << getRightPaddingString(entry.path().string().substr(entry.path().string().find_last_of("/") + 1), max, ' ') + '\t';
+                cout << getRightPaddingString(entry.string().substr(entry.string().find_last_of("/") + 1), max, ' ') + '\t';
             }
             cnt++;
-            if(cnt % brCnt == 0) {
+            if(cnt % brCnt == 0) { // 파일이나 디렉토리가 brCnt번 출력될 때마다 줄바꿈을 함
                 cout << endl;
                 cnt = 0;
             }
@@ -195,7 +241,17 @@ void runCommand(vector<string> command, fs::path& currentDirectory){
 
     else if(command[0] == "find") { // find 명령어
         if(isNotMatch(command.size(), 4)) return;
-
+        if(!fs::exists(command[1], err)) {
+            cout << "No such file or directory, error: " << err.message().c_str() << endl;
+            return;
+        }
+        if(command[2][0] == '-') {
+            if(command[2] == "-name") {
+                findFileAsName(command[1], command[3]);
+            } else {
+                cout << "No such option\n";
+            }
+        }
     }
 
     else if(command[0] == (os == "linux" ? "clear" : os == "window" ? "cls" : "clear")) { // clear 명령어
